@@ -1,9 +1,7 @@
-const mongodb = require('mongodb');
-
-const productSchema = mongodb.Schema({
-    _id : mongodb.Types.ObjectId,
+const mongoose = require('mongoose');
+const productSchema = mongoose.Schema({
+    _id : mongoose.Schema.Types.ObjectId,
     name : String,
     price : Number
 });
-
-module.exports = mongodb.model('Product', productSchema);
+module.exports = mongoose.model('Product', productSchema);

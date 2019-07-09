@@ -4,8 +4,7 @@ const morgan = require("morgan");
 const bodyParser = require('body-parser');
 const productRoutes = require('./api/routes/products');
 const orderRoutes = require('./api/routes/orders');
-
-const mongodb = require('mongodb');
+const mongoose = require("mongoose");
 
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extend : false}));
@@ -22,9 +21,7 @@ app.use((req, res, next) => {
     next();        
 });
 
-var MongoClient = mongodb.MongoClient;
-var url = 'mongodb://localhost:27017/nodejs';
-MongoClient.connect(url, {useMongoClient: true}, function(err, db) {
+mongoose.connect("mongodb://localhost:27017/nodejs",  function(err, db) {
     if(err) {
         console.log('Unable to connect to the server ', err);
     } else {
