@@ -1,115 +1,48 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../models/product');
-const mongoose = require("mongoose");
-//list product
-router.get('/', (req, res, next) => {
-    Product.find()
-    .exec()
-    .then(docs => {
-       console.log(docs);
-       if(docs.length >= 0) {
-        res.status(200).json({
-            message : "Handling Get requests to /products",
-            data : docs
-        });
-       } else {
-            res.status(404).json({
-                message : 'No entries found'
-            })
-       }
-    })
-    .catch(err => {
-        console.log(err);
-        res.status(500).json({
-            error : err
-        })
-    });
+const multer = require('multer');
+const checkAuth = require('../middleware/check-auth');
+const ProductControler = require('./../controllers/products');
+
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, './upload/');
+  },
+  filename: function(req, file, cb) {
+    cb(null, new Date().toISOString() +"_"+ file.originalname);
+  }
 });
+
+const fileFilter = (req,file,cb) => {
+    //reject a file 
+    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: {
+      fileSize: 1024 * 1024 * 5
+  },
+  fileFilter : fileFilter
+});
+
+//list product
+router.get('/', checkAuth, ProductControler.products_get_all);
 
 //create product
-router.post('/', (req, res, next) => {
-    const product = new Product({
-        _id   : new mongoose.Types.ObjectId(),  
-        name  : req.body.name,
-        price : req.body.price
-    });
-    product.save().then(result => {
-        console.log(result);
-    }).catch(err => console.log(err));
-    res.status(201).json({
-        message : "Handling Post requests to /products",
-        createdProduct : product
-    });
-});
+router.post('/', checkAuth , upload.single('productImage') , ProductControler.product_create);
 
 //edit product
-router.get('/:productId', (req, res, next) => {
-    const id = req.params.productId;
-    Product.findById(id)
-    .exec()
-    .then(doc => {
-        if(doc) {
-            console.log(doc);
-            res.status(200).json({
-                message : 'You discovered the special ID',
-                id      : id,
-                data    : doc
-            });
-        } else{
-            res.status(404).json({message : 'No valid entry found for provided ID' })
-        }
-    }).catch(err => {
-        console.log(err);
-        res.status(200).json({error : err});
-    })
-});
+router.get('/:productId',checkAuth,ProductControler.product_edit);
 
 //update product
-router.patch('/:productId', (req, res, next) => {
-    const id = req.params.productId;
-    const update = {
-        name  : req.body.name,
-        price : req.body.price
-    };
-    // const updateOps = {};
-    // for (const ops of req.body) {
-    //   updateOps[ops.propName] = ops.value;
-    // }
-    Product.update({ _id: id }, { $set: update})
-      .exec()
-      .then(result => {
-        res.status(200).json({
-            message : 'Update product!',
-            id : id,
-            data : result
-        });
-      })
-      .catch(err => {
-        console.log(err);
-        res.status(500).json({
-          error: err
-        });
-    });
-});
+router.patch('/:productId',checkAuth, ProductControler.product_update);
 
 //delete product
-router.delete('/:productId',(req, res, next) => {
-    const id = req.params.productId;
-    Product.remove({_id : id})
-    .exec()
-    .then(response => {
-        res.status(200).json({
-            message : 'Deleted product!',
-            id : id,
-            data : response
-        });
-    })
-    .catch(err => {
-        console.log(err);
-        res.status(500).json({
-            error : err
-        })
-    })
-});
+router.delete('/:productId',checkAuth, ProductControler.product_delete);
+
 module.exports = router;
